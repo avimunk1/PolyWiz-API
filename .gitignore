@@ -1,0 +1,8 @@
+/logs/2021-05-07.txt
+*.zip
+*.xlsx
+*.pdf
+*.tiff
+files/.DS_Store
+*.txt
+logs/.DS_Store
