@@ -85,17 +85,17 @@ class polwizApi:
         base_url = self.base_url
         un = self.un
         up = self.up
-        OutFileName = "files/downloadReports{}.json".format(client_id)
+        OutFileName = "files/downloadReports{}.xlsx".format(client_id)
         print("download reports with c_Id", client_id)
         header = {"content-type": "application/json"}
-        url = base_url + "download_report/ ?client_id={}&download_format=json&report_sections =policy".format(client_id)
+        url = base_url + "download_report/ ?client_id={}&download_format=excel&report_sections =policy".format(client_id)
         response = requests.get(url, auth=HTTPBasicAuth(un, up), headers=header, verify=True)
         if response.status_code == 200:
             writeLog("download report successfully downloaded as {}".format(OutFileName))
             with open(OutFileName,"wb") as code:
                 code.write(response.content)
                 code.close()
-            print("download har data ready", response.status_code)
+            print("download har data ready", response.status_code,response.content)
         else:
             print("download har data zip failled with status", response.status_code, response.content, un, up)
             writeLog("download report failed with status {}".format(response.status_code))
@@ -171,11 +171,12 @@ def get_cofig():
     return obj
 
 def main():
-    myCompanies = [1, 2, 5]
-    #myCompanies = [2]
-    getHarData: bool = False
-
-    client_id = 555047
+    #myCompanies = [1, 2, 5]
+    myCompanies = [2]
+    getHarData: bool = True
+    runLogin = False
+#ido C_id 548974
+    client_id = 559707
     if not client_id:
         client_id = createClient()  # create client in PW
         print("new client created", client_id)
@@ -184,15 +185,16 @@ def main():
     instance=polwizApi(client_id)
     if getHarData: g_har_data = instance.get_har_data()
     #company_id = input("companyid")
-    for c in myCompanies:
-        company_id = c
-        getSMSstatus = instance.login_to_personal(company_id) # get OTP
-        smsCode = input("code")
-        login = instance.feed_otp(smsCode) # login with OTP
-        if login != 200 and retryCounter == 0:
-            login = instance.feed_otp(smsCode)
-            retryCounter = 1
-        print("response login = ",login)
+    if runLogin:
+        for c in myCompanies:
+            company_id = c
+            getSMSstatus = instance.login_to_personal(company_id) # get OTP
+            smsCode = input("code")
+            login = instance.feed_otp(smsCode) # login with OTP
+            if login != 200 and retryCounter == 0:
+                login = instance.feed_otp(smsCode)
+                retryCounter = 1
+            print("response login = ",login)
 
     dazip = instance.getDataAsZip()
     DR = instance.download_reports()

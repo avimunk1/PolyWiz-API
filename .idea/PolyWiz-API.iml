@@ -3,6 +3,10 @@
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
       <excludeFolder url="file://$MODULE_DIR$/venv" />
+      <excludeFolder url="file://$MODULE_DIR$/files/אבי מונק/הפניקס" />
+      <excludeFolder url="file://$MODULE_DIR$/files/אבי מונק/הראל" />
+      <excludeFolder url="file://$MODULE_DIR$/files/אבי מונק/מגדל" />
+      <excludeFolder url="file://$MODULE_DIR$/logs" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
