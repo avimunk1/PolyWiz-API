@@ -15,6 +15,34 @@ print("datetiime=", cDate)
 cDtaeTme = str(cDate) + str(cTime)
 data: str = ""
 
+class Policy:
+
+    def __init__(self,filename):
+        self.filename = filename
+        self.policyInfo:dict = self.get_policy_info()
+        print(self.policyInfo)
+        if self.policyInfo != None:
+            self.policy_number: int = self.policyInfo['policy_number']
+            self.premium: float = self.policyInfo['premium']
+            self.insurance_coverage: float = self.policyInfo['coverage']
+            self.policy_start_date: data = '01-01-1980'
+            print("this is policy info",self.policy_number,self.premium)
+
+    def get_policy_info(self):
+        #fileName = "/Users/avimunk/PycharmProjects/PolyWiz-API/files/policy_info.json"
+        fileName = self.filename
+        print(fileName)
+        try:
+            with open(fileName) as f:
+                data = json.load(f)
+            policyObj: dict
+            a = data['details policies from insurance companies']
+            for i in a:
+                policyObj = i
+                return policyObj
+        except:
+            print("get policy info failed")
+            exit()
 
 class polwizApi:
 
@@ -85,22 +113,23 @@ class polwizApi:
         base_url = self.base_url
         un = self.un
         up = self.up
-        OutFileName = "files/downloadReports{}.xlsx".format(client_id)
+        OutFileName = "files/downloadReports{}.json".format(client_id)
         print("download reports with c_Id", client_id)
         header = {"content-type": "application/json"}
-        url = base_url + "download_report/ ?client_id={}&download_format=excel&report_sections =policy".format(client_id)
+        url = base_url + "download_report/ ?client_id={}&download_format=json&report_sections =policy".format(client_id)
         response = requests.get(url, auth=HTTPBasicAuth(un, up), headers=header, verify=True)
         if response.status_code == 200:
             writeLog("download report successfully downloaded as {}".format(OutFileName))
             with open(OutFileName,"wb") as code:
                 code.write(response.content)
                 code.close()
-            print("download har data ready", response.status_code,response.content)
+            print("download report successfully done", response.status_code,response.content)
         else:
             print("download har data zip failled with status", response.status_code, response.content, un, up)
             writeLog("download report failed with status {}".format(response.status_code))
             exit()
-        return response.status_code
+        DR_Response = {"status":response.status_code,"filename":OutFileName}
+        return DR_Response
 
     def get_har_data(self):
         client_id = self.client_id
@@ -170,13 +199,16 @@ def get_cofig():
     obj = json.loads(data)
     return obj
 
+#Policy.get_policy_info()
+
+
 def main():
     #myCompanies = [1, 2, 5]
     myCompanies = [2]
-    getHarData: bool = True
+    getHarData: bool = False
     runLogin = False
 #ido C_id 548974
-    client_id = 559707
+    client_id = 548974
     if not client_id:
         client_id = createClient()  # create client in PW
         print("new client created", client_id)
@@ -198,6 +230,17 @@ def main():
 
     dazip = instance.getDataAsZip()
     DR = instance.download_reports()
+    print(DR)
+    print(DR["status"],DR["filename"])
+    filenane = DR["filename"]
+    mypolicy = Policy(filenane)
+    print(50 * "=")
+    if mypolicy != None:
+        print("policy number={}, premia={},insurance covarage={} and policy start date is:{}".format(mypolicy.policy_number,mypolicy.premium,mypolicy.insurance_coverage,mypolicy.policy_start_date))
+    else:print("policy data is missing")
+    print(50 * "=")
+
+
 
 if __name__ == '__main__':
     main()
