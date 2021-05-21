@@ -6,6 +6,7 @@ from requests.auth import HTTPBasicAuth
 from datetime import date
 from datetime import datetime
 from datetime import time
+import time
 
 cTime = datetime.now()
 cTime = cTime.strftime("%H:%M:%S")
@@ -19,13 +20,16 @@ class Policy:
 
     def __init__(self,filename):
         self.filename = filename
+        self.OCR_Data = None
+        self.policy_number: int = None
+
         self.policyInfo:dict = self.get_policy_info()
         print(self.policyInfo)
-        if self.policyInfo != None:
+        if self.policyInfo != None and self.OCR_Data:
             self.policy_number: int = self.policyInfo['policy_number']
             self.premium: float = self.policyInfo['premium']
             self.insurance_coverage: float = self.policyInfo['coverage']
-            self.policy_start_date: data = '01-01-1980'
+            self.policy_start_date: data = self.policyInfo['start_date']
             print("this is policy info",self.policy_number,self.premium)
 
     def get_policy_info(self):
@@ -36,10 +40,17 @@ class Policy:
             with open(fileName) as f:
                 data = json.load(f)
             policyObj: dict
-            a = data['details policies from insurance companies']
-            for i in a:
-                policyObj = i
-                return policyObj
+            OCR_Data = data['details policies from insurance companies']
+            self.OCR_Data = OCR_Data
+            if OCR_Data:
+                for i in OCR_Data:
+                    policyObj = i
+                    return policyObj
+            else:
+                print("details policies from insurance companies is empty")
+                return "-1"
+                exit()
+
         except:
             print("get policy info failed")
             exit()
@@ -55,6 +66,8 @@ class polwizApi:
         self.client_id: int = client_id
         self.company_id = 1
         self.session_id:str = ""
+        self.retryCounter = 0
+
 
     def login_to_personal(self, company_id):
         self.company_id = company_id
@@ -118,14 +131,22 @@ class polwizApi:
         header = {"content-type": "application/json"}
         url = base_url + "download_report/ ?client_id={}&download_format=json&report_sections =policy".format(client_id)
         response = requests.get(url, auth=HTTPBasicAuth(un, up), headers=header, verify=True)
+        print("DR status = ",response.status_code)
         if response.status_code == 200:
             writeLog("download report successfully downloaded as {}".format(OutFileName))
             with open(OutFileName,"wb") as code:
                 code.write(response.content)
                 code.close()
             print("download report successfully done", response.status_code,response.content)
+        elif response.status_code == 202:
+            if self.retryCounter < 20 and response.status_code == 202:
+                self.retryCounter = self.retryCounter +1
+                print("retry in 30 sec",self.retryCounter)
+                writeLog("download report retry in 30 sec for the {}".format(self.retryCounter))
+                time.sleep(30)
+                polwizApi.download_reports(self)
         else:
-            print("download har data zip failled with status", response.status_code, response.content, un, up)
+            print("download OCR data failled with status", response.status_code, response.content, un, up)
             writeLog("download report failed with status {}".format(response.status_code))
             exit()
         DR_Response = {"status":response.status_code,"filename":OutFileName}
@@ -141,6 +162,7 @@ class polwizApi:
         header = {"content-type": "application/json"}
         url = base_url + "get_har_data/?client_id={}&download_format=zip".format(client_id)
         response = requests.get(url, auth=HTTPBasicAuth(un, up), headers=header, verify=True)
+        print("har download status",response.status_code)
         if response.status_code == 200:
             writeLog("har data successfully downloaded as {}".format(OutFileName))
             with open(OutFileName, "wb") as code:
@@ -152,7 +174,6 @@ class polwizApi:
             writeLog("har data failed with status {}".format(response.status_code))
             exit()
         return response.status_code
-
 
 def createClient():
     base_url = "https://polywizz.com/api/"
@@ -199,24 +220,23 @@ def get_cofig():
     obj = json.loads(data)
     return obj
 
-#Policy.get_policy_info()
-
 
 def main():
     #myCompanies = [1, 2, 5]
     myCompanies = [2]
     getHarData: bool = False
     runLogin = False
-#ido C_id 548974
-    client_id = 548974
+    client_id = None
+    retryCounter = 0
+
     if not client_id:
         client_id = createClient()  # create client in PW
         print("new client created", client_id)
-    retryCounter = 0
-    instance = client_id
-    instance=polwizApi(client_id)
+        getHarData: bool = True
+        runLogin = True
+    #instance = client_id
+    instance = polwizApi(client_id)
     if getHarData: g_har_data = instance.get_har_data()
-    #company_id = input("companyid")
     if runLogin:
         for c in myCompanies:
             company_id = c
@@ -228,18 +248,18 @@ def main():
                 retryCounter = 1
             print("response login = ",login)
 
-    dazip = instance.getDataAsZip()
+    # dazip = instance.getDataAsZip()
     DR = instance.download_reports()
     print(DR)
     print(DR["status"],DR["filename"])
     filenane = DR["filename"]
     mypolicy = Policy(filenane)
     print(50 * "=")
-    if mypolicy != None:
-        print("policy number={}, premia={},insurance covarage={} and policy start date is:{}".format(mypolicy.policy_number,mypolicy.premium,mypolicy.insurance_coverage,mypolicy.policy_start_date))
-    else:print("policy data is missing")
+    if mypolicy.policy_number:
+        if mypolicy == None or mypolicy == "-1":print("policy data is missing")
+        else: print("policy number={}, premia={},insurance covarage={} and policy start date is:{}".format(mypolicy.policy_number,mypolicy.premium,mypolicy.insurance_coverage,mypolicy.policy_start_date))
+    else:print("OCR data is not ready")
     print(50 * "=")
-
 
 
 if __name__ == '__main__':
