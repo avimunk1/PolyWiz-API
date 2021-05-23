@@ -1,4 +1,7 @@
-# This is a sample Python script.
+# This project implements polywizz (https://www.polywizz.biz) API
+# it developed for a specific project but can be used to consume the API for any need
+# a full documentation for the entire API is available at
+# https://documenter.getpostman.com/view/3147435/TVzYeDvk#42d3314d-0379-4188-b92e-f9280090de98
 
 import json
 import requests
@@ -16,16 +19,16 @@ print("datetiime=", cDate)
 cDtaeTme = str(cDate) + str(cTime)
 data: str = ""
 
-class Policy:
+class Policy: # this class read the response and save the relevent data from the policy
 
     def __init__(self,filename):
         self.filename = filename
         self.OCR_Data = None
-        self.policy_number: int = None
+        self.policy_number: int = 0
 
         self.policyInfo:dict = self.get_policy_info()
         print(self.policyInfo)
-        if self.policyInfo != None and self.OCR_Data:
+        if self.policyInfo != 0 and self.OCR_Data:
             self.policy_number: int = self.policyInfo['policy_number']
             self.premium: float = self.policyInfo['premium']
             self.insurance_coverage: float = self.policyInfo['coverage']
@@ -33,7 +36,6 @@ class Policy:
             print("this is policy info",self.policy_number,self.premium)
 
     def get_policy_info(self):
-        #fileName = "/Users/avimunk/PycharmProjects/PolyWiz-API/files/policy_info.json"
         fileName = self.filename
         print(fileName)
         try:
@@ -49,13 +51,11 @@ class Policy:
             else:
                 print("details policies from insurance companies is empty")
                 return "-1"
-                exit()
-
         except:
             print("get policy info failed")
             exit()
 
-class polwizApi:
+class polwizApi: # this class and it's methoeds consume Polywizz API
 
     def __init__(self,client_id):
         self.config = get_cofig()
@@ -67,7 +67,6 @@ class polwizApi:
         self.company_id = 1
         self.session_id:str = ""
         self.retryCounter = 0
-
 
     def login_to_personal(self, company_id):
         self.company_id = company_id
@@ -175,18 +174,19 @@ class polwizApi:
             exit()
         return response.status_code
 
-def createClient():
+def createClient():  # create an intrnal "client" in PW database
     base_url = "https://polywizz.com/api/"
     config = get_cofig()
     un = config["un"]
     up = config["up"]
     client_id = -1
+    GUI = get_cofig("user_info.json")
     userInfo = {
-        "first_name": "אבי",
-        "last_name": "מונק",
-        "phone": "0543330652",
-        "id_number": "022026587",
-        "id_issuing_date": "2013-07-14"}
+        "first_name": GUI["first_name"],
+        "last_name": GUI["last_name"],
+        "phone": GUI["phone"],
+        "id_number": GUI["id_number"],
+        "id_issuing_date": GUI["id_issuing_date"]}
     header = {"content-type": "application/json"}
     url = base_url + "create_client/"
     response = requests.post(url, data=json.dumps(userInfo), auth=HTTPBasicAuth(un, up), headers=header, verify=True)
@@ -198,9 +198,9 @@ def createClient():
         print("request failed with status code", response.status_code, response.json()["detail"])
         data = ("request failed with status code".format(response.status_code))
         writeLog(data,newlog=True)
-    return client_id
+    return client_id # #
 
-def writeLog(data,newlog=False):
+def writeLog(data,newlog=False):  # general utility to create / add lines to a log file
     cTime = datetime.now()
     cTime = cTime.strftime("%H:%M:%S")
     cDate = str(date.today())
@@ -212,9 +212,10 @@ def writeLog(data,newlog=False):
     file.write(line)
     file.close()
 
-def get_cofig():
+def get_cofig(configFileName="Poywiz_Config.json"):  # read the reqerd config file
     path = "/Users/avimunk/PycharmProjects/config/polwiz/"
-    configFileName = "Poywiz_Config.json"
+    #configFileName = "Poywiz_Config.json"
+    configFileName = configFileName
     file = open(path + configFileName, 'r')
     data = file.read()
     obj = json.loads(data)
@@ -222,11 +223,12 @@ def get_cofig():
 
 
 def main():
-    #myCompanies = [1, 2, 5]
-    myCompanies = [2]
+    #myCompanies = [1, 2, 5]  # a list of insurance companies to download the policies from.  the full list in PW documenton
+    myCompanies = [5]
     getHarData: bool = False
-    runLogin = False
-    client_id = None
+    runLogin = True
+    DWZIP: bool = False
+    client_id: int = None    # set as none to create new
     retryCounter = 0
 
     if not client_id:
@@ -234,7 +236,6 @@ def main():
         print("new client created", client_id)
         getHarData: bool = True
         runLogin = True
-    #instance = client_id
     instance = polwizApi(client_id)
     if getHarData: g_har_data = instance.get_har_data()
     if runLogin:
@@ -248,7 +249,7 @@ def main():
                 retryCounter = 1
             print("response login = ",login)
 
-    # dazip = instance.getDataAsZip()
+    if DWZIP: dwazip = instance.getDataAsZip()
     DR = instance.download_reports()
     print(DR)
     print(DR["status"],DR["filename"])
@@ -256,7 +257,7 @@ def main():
     mypolicy = Policy(filenane)
     print(50 * "=")
     if mypolicy.policy_number:
-        if mypolicy == None or mypolicy == "-1":print("policy data is missing")
+        if mypolicy == 0 or mypolicy == "-1":print("policy data is missing")
         else: print("policy number={}, premia={},insurance covarage={} and policy start date is:{}".format(mypolicy.policy_number,mypolicy.premium,mypolicy.insurance_coverage,mypolicy.policy_start_date))
     else:print("OCR data is not ready")
     print(50 * "=")
