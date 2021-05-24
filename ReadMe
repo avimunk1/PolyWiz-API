@@ -1,0 +1,21 @@
+# polywizz API
+
+Polywizz API  is a Python "code" implements polywizz (https://www.polywizz.biz) API.
+
+## how to use
+
+To use this project, you will need a user with API privileges. once you gave it just replace the values
+for UN and UP with your user / password (i used a json config file)
+replace the userInfo object
+
+
+## Usage
+
+This project implements polywizz (https://www.polywizz.biz) API
+it developed for a specific project but can be used to consume the API for any need
+a full documentation for the entire API is available at
+https://documenter.getpostman.com/view/3147435/TVzYeDvk#42d3314d-0379-4188-b92e-f9280090de98
+
+# Class's
+ - polywizz API class, this class include a method for every api call i used.  so each of the API's can be called from main.
+- policy class, this class is handling the results of the OCR process. i.e it saves the relevant information from the policy

@@ -224,11 +224,11 @@ def get_cofig(configFileName="Poywiz_Config.json"):  # read the reqerd config fi
 
 def main():
     #myCompanies = [1, 2, 5]  # a list of insurance companies to download the policies from.  the full list in PW documenton
-    myCompanies = [5]
-    getHarData: bool = False
+    myCompanies = [1]
+    getHarData: bool = True
     runLogin = True
     DWZIP: bool = False
-    client_id: int = None    # set as none to create new
+    client_id: int = 564738    # set as none to create new
     retryCounter = 0
 
     if not client_id:
